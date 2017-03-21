@@ -1,0 +1,938 @@
+<html>
+<head></head>
+
+<body>
+<div>
+<label><input name="Lang" id="radio_en" type="radio" value="EN" />English</label> 
+<label><input name="Lang" id="radio_zh" type="radio" value="ZH" />中文</label> 
+</div>
+<div>
+<div>
+<select name="attacker" id="attacker">
+<option value="None">Select Attacker</option>
+</select>
+VS
+<select name="defender" id="defender">
+<option value="None">Select Defender</option>
+</select>
+</div>
+
+
+<table border="0">
+  <tr>
+	<th></th>
+    <th>Attacker</th>
+    <th>Defender</th>
+  </tr>
+  <tr>
+	<td>HP:</td>
+    <td><textarea id="hp1" rows=1 cols=12 >0</textarea></td>
+    <td><textarea id="hp2" rows=1 cols=12 >0</textarea></td>
+  </tr>
+   <tr>
+	<td>ATK:</td>
+    <td><textarea id="atk1" rows=1 cols=12 >0</textarea></td>
+    <td><textarea id="atk2" rows=1 cols=12 >0</textarea></td>
+  </tr>
+  <tr>
+	<td>SPD:</td>
+    <td><textarea id="spd1" rows=1 cols=12 >0</textarea></td>
+    <td><textarea id="spd2" rows=1 cols=12 >0</textarea></td>
+  </tr>
+  <tr>
+	<td>DEF:</td>
+    <td><textarea id="def1" rows=1 cols=12 >0</textarea></td>
+    <td><textarea id="def2" rows=1 cols=12 >0</textarea></td>
+  </tr>
+  <tr>
+	<td>RES:</td>
+    <td><textarea id="res1" rows=1 cols=12 >0</textarea></td>
+    <td><textarea id="res2" rows=1 cols=12 >0</textarea></td>
+  </tr>
+  <tr>
+	<td>Weapon:</td>
+    <td><select name="weapon1" id="weapon1"><option value="None">Select Attacker</option></select></td>
+    <td><select name="weapon2" id="weapon2"><option value="None">Select Defender</option></select></td>
+  </tr>
+  <!--<tr>
+	<td>Assist:</td>
+    <td><select name="assist1" id="assist1"><option value="None">Select Attacker</option></select></td>
+    <td><select name="assist2" id="assist2"><option value="None">Select Defender</option></select></td>
+  </tr>-->
+  <tr>
+	<td>Special:</td>
+    <td><select name="special1" id="special1"><option value="None">Select Attacker</option></select></td>
+    <td><select name="special2" id="special2"><option value="None">Select Defender</option></select></td>
+  </tr>  
+  <tr>
+	<td>Passive_A:</td>
+    <td><select name="passivea1" id="passivea1"><option value="None">Select Attacker</option></select></td>
+    <td><select name="passivea2" id="passivea2"><option value="None">Select Defender</option></select></td>
+  </tr>  
+    <tr>
+	<td>Passive_B:</td>
+    <td><select name="passiveb1" id="passiveb1"><option value="None">Select Attacker</option></select></td>
+    <td><select name="passiveb2" id="passiveb2"><option value="None">Select Defender</option></select></td>
+  </tr>  
+    <tr>
+	<td>Passive_C:</td>
+    <td><select name="passivec1" id="passivec1"><option value="None">Select Attacker</option></select></td>
+    <td><select name="passivec2" id="passivec2"><option value="None">Select Defender</option></select></td>
+  </tr>  
+</table>
+
+<div><button id="battle">Battle!</button></div>
+<div><button id="r_battle">Reverse_Battle!</button></div>
+<div>
+<label id="result">author:ptez533</br>
+===============================================</br>
+17/03/17 update v0.4. </br>
+
+===============================================</br>
+17/02/24 update v0.3 </br>
++ Add all roles using Axe, Bow and Dagger. </br>
++ Add reverse battle button.</br>
++ Fix the bug of Weapon Breaker skills</br>
+
+===============================================</br>
+17/02/21 update v0.2 </br>
++ Add all roles using Sword and Lance (except Jagen due to the lack of 5 star stats.</br>
++ Sort roles by names.</br>
++ Fix the bug with Vantage of Anna. Fix the hp loss of passive skill Fury</br>
++ Fix the bug with Triangle-Adept</br>
++ Fix the bug of distantcounter</br>
++ Fix the bug of Brave weapons</br>
++ Fix the bug of buff duratons</br>
+</label>
+</div>
+</div>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="jsonout.json"></script>
+<script type="text/javascript">
+
+var LANGUAGE = 'ZH'
+
+var ATTR_NAMES = {
+'1':'HP','2':'ATK','3':'SPD','4':'DEF','5':'RES','6':'MOV'
+};
+
+var PASSIVE_SKILLS = ['P_Skill_A', 'P_Skill_B', 'P_Skill_C'];
+
+var COLOR_RED = 1;
+var COLOR_BLUE = 2;
+var COLOR_GREEN = 3;
+var COLOR_COLORLESS = 4;
+
+var SPECIAL_ATTACK = 1;
+var SPECIAL_ATTACKED = 2;
+var SPECIAL_BEFORE_ATTACK = 3;
+var SPECIAL_AFTER_ATTACK = 4;
+
+var attacker = "None";
+var defender = "None";
+$(document).ready(new function(){
+	log('\nREADY');
+	
+	changeLang(LANGUAGE);
+});
+
+function changeLang(lang) {
+	console.log("Change Lang:"+lang);
+	
+	nameKey = 'Name_ZH';
+	if ( lang == 'EN') {
+		names = ennames;
+		nameKey = 'Name_EN';
+		$("#radio_en").prop('checked','checked');
+	} else if (lang == 'ZH') {
+		names = zhnames;
+		nameKey = 'Name_ZH';
+		$("#radio_zh").prop('checked','checked');
+	} else {
+		return;
+	}
+	$("#attacker").empty("");
+	$("#defender").empty("");
+	
+	$("#attacker").append("<option value=\"None\">Select Attacker</option>");
+	$("#defender").append("<option value=\"None\">Select Defender</option>");
+	for (key in zhnames) {
+		//console.log(names[key]);
+		$("#attacker").append("<option value='"+names[key]+"'>"+roles[names[key]][nameKey]+"</option>");
+		$("#defender").append("<option value='"+names[key]+"'>"+roles[names[key]][nameKey]+"</option>");
+	}
+	
+	initialList("weapon", weapon, nameKey);
+	initialList("special", special, nameKey);
+	initialList("passivea", pskilla, nameKey);
+	initialList("passiveb", pskillb, nameKey);
+	initialList("passivec", pskillc, nameKey);
+}
+
+function initialList(listKey, data, nameKey){
+	$("#"+listKey+"1").empty("");
+	$("#"+listKey+"2").empty("");	
+	$("#"+listKey+"1").append("<option value='-'>" + '-'+"</option>");
+	$("#"+listKey+"2").append("<option value='-'>" + '-'+"</option>");
+	for (k in data) {
+		$("#"+listKey+"1").append("<option value='" + k + "'>" + data[k][nameKey]+"</option>");
+		$("#"+listKey+"2").append("<option value='" + k + "'>" + data[k][nameKey]+"</option>");
+	}
+}
+
+$("#radio_zh").change(function () {
+	if ($("#radio_zh").is(":checked")) {
+		LANGUAGE = 'ZH';
+		changeLang(LANGUAGE);
+		$("#radio_en").prop('checked',false);
+	} 
+});
+
+$("#radio_en").change(function () {
+	if ($("#radio_en").is(":checked")) {
+		LANGUAGE = 'EN';
+		changeLang(LANGUAGE);
+		$("#radio_zh").prop('checked',false);
+	}
+});
+
+$("#attacker").change(function (){
+	attacker = $("#attacker").val();
+	fillData(1,attacker);
+});
+
+$("#defender").change(function (){
+	defender = $("#defender").val();
+	fillData(2,defender);
+});
+
+function fillData(key, roleID){
+	role = roles[roleID];
+	console.log(role);
+	$("#hp"+key).val(role["HP"]);
+	$("#atk"+key).val(role["ATK"]);
+	$("#spd"+key).val(role["SPD"]);
+	$("#def"+key).val(role["DEF"]);
+	$("#res"+key).val(role["RES"]);
+	$("#weapon"+key).attr('value',role['W_Skill']['ID']);
+	if (role['S_Skill']!='-') {
+		$("#special"+key).attr('value',role['S_Skill']['ID']);
+	} else {
+		$("#special"+key).attr('value','-');
+	}
+	if (role['P_Skill_A']!='-') {
+		$("#passivea"+key).attr('value',role['P_Skill_A']['ID']);
+	} else {
+		$("#passivea"+key).attr('value','-');
+	}
+	if (role['P_Skill_B']!='-') {
+		$("#passiveb"+key).attr('value',role['P_Skill_B']['ID']);
+	} else {
+		$("#passiveb"+key).attr('value','-');
+	}
+	if (role['P_Skill_C']!='-') {
+		$("#passivec"+key).attr('value',role['P_Skill_C']['ID']);
+	} else {
+		$("#passivec"+key).attr('value','-');
+	}
+}
+
+function getSkill(key, data, key2) {
+	var value = $("#"+key+key2).val();
+	if (value == '-') {
+		return '0';
+	} else {
+		return data[value];
+	}
+}
+
+function startBattle(isReverse) {
+	$("#result").empty("");
+	if (attacker == "None" || defender == "None") {
+		log("Please Select Attacker and Defender!");
+	} else {
+		//console.log(attacker);
+		//console.log(defender);
+		var base1 = {'HP':parseInt($("#hp1").val()), 'ATK':parseInt($("#atk1").val()), 'SPD':parseInt($("#spd1").val()), 'DEF':parseInt($("#def1").val()), 'RES':parseInt($("#res1").val()) }
+		var base2 = {'HP':parseInt($("#hp2").val()), 'ATK':parseInt($("#atk2").val()), 'SPD':parseInt($("#spd2").val()), 'DEF':parseInt($("#def2").val()), 'RES':parseInt($("#res2").val()) }
+
+		var wskill1 = getSkill('weapon', weapon, 1);
+		var wskill2 = getSkill('weapon', weapon, 2);
+		var sskill1 = getSkill('special', special, 1);
+		var sskill2 = getSkill('special', special, 2);
+		var pskilla1 = getSkill('passivea', pskilla, 1);
+		var pskilla2 = getSkill('passivea', pskilla, 2);
+		var pskillb1 = getSkill('passiveb', pskillb, 1);
+		var pskillb2 = getSkill('passiveb', pskillb, 2);
+		var pskillc1 = getSkill('passivec', pskillc, 1);
+		var pskillc2 = getSkill('passivec', pskillc, 2);
+		
+		
+		var role1 = new Role(roles[attacker], base1, wskill1, sskill1, pskilla1, pskillb1, pskillc1);
+		var role2 = new Role(roles[defender], base2, wskill2, sskill2, pskilla2, pskillb2, pskillc2);
+		log(role1.name + " V.S. " + role2.name);
+		console.log(role1);
+		console.log(role2);
+		if (isReverse) {
+			battle(role2, role1);
+		}else {
+			battle(role1, role2);
+		}
+	}
+}
+
+$("#battle").click(function () {
+	startBattle(false);
+});
+
+$("#r_battle").click(function () {
+	startBattle(true);
+});
+
+function logSkill(role, skill) {
+	log(role.name + " activates <b>" + skill['Name'] + "</b>!");
+}
+
+function log(str) {
+	$("#result").append(str + '</br>');
+	console.log(str);
+}
+
+function fillAttrMod(mod, wskill, pskilla) {
+	mod['ATK'] += parseInt(wskill['Might']);
+	if (wskill['Brave'] == 1) {
+		mod['SPD'] -= 5;
+	}
+	if (pskilla == '0') {
+		return;
+	}
+	if (pskilla['Fury'] != '0') { //Fury
+		var tmp = ['ATK','SPD','DEF','RES'];
+		for (var k in tmp) {
+			mod[tmp[k]] += parseInt(pskilla['Attr']);
+		}
+	} else if (pskilla['Attr']!='0' && pskilla['Attr'].length==1) { //Life and Death
+		var value = parseInt(pskilla['Attr']);
+		mod['ATK'] += value;
+		mod['SPD'] += value;
+		mod['DEF'] -= value;
+		mod['RES'] -= value;
+	} else if (pskilla['Attr'] != '0') { //Attr + 1/2/3
+		var attr = pskilla['Attr'].split(':');
+		mod[ATTR_NAMES[attr[0]]] += parseInt(attr[1]);
+	}
+}
+
+function Role(roleConfig, base, wskill, special, pskilla, pskillb, pskillc) {
+	this.config = roleConfig;
+	//console.log(roleConfig);
+	this.weapon = wskill;
+	this.special = special;
+	this.passivea = pskilla;
+	this.passiveb = pskillb;
+	this.passivec = pskillc;
+	
+	this.base = base;
+	this.mod = {'HP':0, 'ATK':0, 'SPD':0, 'DEF':0, 'RES':0};
+	fillAttrMod(this.mod, wskill, pskilla);
+	
+	this.maxHP = parseInt(this.base["HP"]) + parseInt(this.mod['HP']);
+	this.curHP = this.maxHP;
+	this.buff = {'ATK':0,'SPD':0,'DEF':0,'RES':0};
+	this.debuff = {'ATK':0,'SPD':0,'DEF':0,'RES':0};
+	this.tmpBuff = {'ATK':0,'SPD':0,'DEF':0,'RES':0};
+	this.sCD = -1;
+	this.isBrave = false;
+	
+	var colors = ["Red","Blue","Green","Grey"];
+	this.name = "<font color=" + "\"" + colors[parseInt(this.weapon['Color'])-1] + "\">" + this.config[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "</font>";
+	
+	this.debugString = function() {
+		var str = this.name + " HP:"+this.curHP+"/"+this.maxHP;
+		for (key in this.buff){
+			str += " " + key + ":" + (parseInt(this.base[key]) + parseInt(this.mod[key]));
+			if (this.buff[key]!=0){
+				str += "+" + this.buff[key];
+			}
+			if (this.tmpBuff[key]!=0){
+				str += "+t" + this.tmpBuff[key];
+			}
+			if (this.debuff[key]!=0){
+				str += "-" + this.debuff[key];
+			}
+		}
+		str += " CD:" + this.sCD;
+	
+		return str;
+	}
+	
+	this.isSpecialReady = function(t) {
+		if (this.special == '0') {
+			return;
+		}
+		
+		var timing = parseInt(this.special['Timing']);
+		return t==timing && this.sCD == 0;
+	}
+	
+	this.hasSpecial = function() {
+		return this.special != '0';
+	}
+	
+	this.resetCD = function () {
+		if (this.hasSpecial()) {
+			this.sCD = parseInt(this.special['CD']);
+		} else {
+			this.sCD = -1;
+			return;
+		}
+		if (this.weapon['CD_Mod'] != '0') {
+			this.sCD += parseInt(this.weapon['CD_Mod']);
+		}
+	};
+	
+	this.nonBattleHurt = function(value) {
+		this.curHP -= value;
+		if (this.curHP <= 0){
+			this.curHP = 1;
+		}
+	};
+	
+	this.isDie = function () { return this.curHP <= 0};
+	
+	this.hpRatio = function () {
+		return this.curHP * 100 / this.maxHP;
+	};
+	
+	this.decCD = function () {
+		if (this.sCD > 0) {
+			this.sCD -= 1;
+		}
+	};
+	
+	this.addBuff = function(type, value) {
+		var old = this.buff[type]
+		if (value > old){
+			this.buff[type] = value;
+		}
+	};
+	
+	this.addDebuff = function(type, value) {
+		var old = this.debuff[type]
+		if (value > old){
+			this.debuff[type] = value;
+		}
+	};
+	
+	this.getTotalBuff = function() {
+		var num = 0;
+		for (key in this.buff) {
+			num += this.buff[key];
+		}
+		return num;
+	}
+	
+	this.resetBuff = function() {
+		for (key in this.buff) {
+			this.buff[key] = 0;
+		}
+
+	}
+	
+	this.resetDebuff = function() {
+		for (key in this.debuff) {
+			this.debuff[key] = 0;
+		}
+	}
+	
+	this.addTmpBuff = function(type, value) {
+		var old = this.tmpBuff[type]
+		if (value > old){
+			this.tmpBuff[type] = value;
+		}
+	}
+	
+	this.resetTmpBuff = function() {
+		for (key in this.debuff) {
+			this.tmpBuff[key] = 0;
+		}
+	}
+	
+	this.getAttr = function(type) {
+		return parseInt(this.base[type]) + parseInt(this.mod[type]) + this.buff[type] + this.tmpBuff[type] - this.debuff[type];
+	};	
+	
+	this.immuneEff = function() {
+		var skill = this.getPassiveSkillWithField('Anti_Eff');
+		if (skill != null) {
+			return skill['Value'] == '1';
+		}
+		return false;
+	}
+	
+	this.checkWeaponBreak = function(wType) {
+		var skill = this.getPassiveSkillWithField('Breaker');
+		if (skill != null) {
+			//console.log(skill);
+			var arr = skill['Value'].split(':');
+			var type = parseInt(arr[0]);
+			var value = parseInt(arr[1]);
+			//console.log('T'+this.hpRatio()+' w'+value);
+			return parseInt(wType) == type && this.hpRatio() > value;
+		}
+		return false;
+	}
+	
+	this.checkVantage = function(type) {
+		var skill = this.getPassiveSkillWithField('Desperation');
+		if (skill != null) {
+			var vantageRatio = parseInt(skill['Vantage']);
+			return this.hpRatio() <= vantageRatio;
+		}
+		return false;
+	}
+	
+	this.checkDesperation = function(type) {
+		var skill = this.getPassiveSkillWithField('Desperation');
+		if (skill != null) {
+			var desRatio = parseInt(skill['Value']);
+			return desRatio >= this.hpRatio();
+		}
+		return false;
+	}
+	
+	this.checkWary = function() {
+		var skill = this.getPassiveSkillWithField('Wary');
+		if (skill != null) {
+			console.log(skill);
+			var waryRatio = parseInt(skill['Value']);
+			return waryRatio < this.hpRatio();
+		}
+		return false;
+	}
+	
+	this.checkBrash = function () {
+		var skill = this.getPassiveSkillWithField('Brash');
+		if (skill != null) {
+			var brashRatio = parseInt(skill['Value']);
+			return brashRatio >= this.hpRatio();
+		}
+		return false;
+	}
+	
+	this.checkRiposite = function () {
+		var skill = this.getPassiveSkillWithField('Riposte');
+		if (skill != null) {
+			var riposteRatio = parseInt(skill['Value']);
+			return riposteRatio <= this.hpRatio();
+		}
+		return false;
+	}
+	
+	this.hasBraveWeapon = function () {
+		if (this.weapon['Brave'] == '1') {
+			return true;
+		}
+		return false;
+	}
+	
+	this.getPassiveSkillWithField = function(field) {
+		var nameKey = LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH';
+		if (this.weapon['Addition'] != '0' 
+				&& this.weapon['Addition'][field] != '0') {
+			return {'Name':this.weapon[nameKey], 'Value':this.weapon['Addition'][field]};
+		}
+		
+		if (this.passivea != '0' && this.passivea[field] != '0') {
+			return {'Name':this.passivea[nameKey], 'Value':this.passivea[field]};
+		}
+		if (this.passiveb != '0' && this.passiveb[field] != '0') {
+			return {'Name':this.passiveb[nameKey], 'Value':this.passiveb[field]};
+		}
+		if (this.passivec != '0' && this.passivec[field] != '0') {
+			return {'Name':this.passivec[nameKey], 'Value':this.passivec[field]};
+		}
+		
+		return null;
+	}
+};
+
+
+
+function settleDefiantSkill(role) {
+
+	var skill = role.getPassiveSkillWithField('Defiant');
+	if (skill != null) {
+		console.log(skill);
+		var arr = skill['Value'].split(':');
+		var ratio = parseInt(arr[0]);
+		var attr = ATTR_NAMES[arr[1]];
+		var value = parseInt(arr[2]);
+		if (role.hpRatio() < ratio) {
+			role.addBuff(attr, value)
+			log(role.name + " activates <b>" + skill['Name'] + "</b> " + attr + " increase " + value); 
+		}
+	}
+}
+
+function settleThreatenSkill(attacker, defender) {
+	if (attacker.passivec != '0' && attacker.passivec['Threaten']!='0') {
+		var arr = attacker.passivec['Threaten'].split(':');
+		var attr = ATTR_NAMES[arr[0]];
+		var value = parseInt(arr[1]);
+		defender.addDebuff(attr, value);
+		log(attacker.name + " activates <b>" +attacker.passivec[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH']+ "</b> " + defender.name + "'s " +  attr + " decrease " + value); 
+	}
+}
+
+function settleInitAttackBuff(role) {
+	if (role.passivea != '0' && role.passivea['Blow']!='0') {
+		var arr = role.passivea['Blow'].split(':');
+		var attr = ATTR_NAMES[arr[0]];
+		var value = parseInt(arr[1]);
+		role.addTmpBuff(attr, value);
+		log(role.name + " activates <b>" +role.passivea[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "</b> " + attr + " increase " + value); 
+	}
+}
+
+function settleAttackedBuff(role) {
+	if (role.weapon['Addition'] != '0' && role.weapon['Addition']['AttackedDef']!='0') {
+		var value = parseInt(role.weapon['Addition']['AttackedDef']);
+		role.addTmpBuff("DEF", value);
+		role.addTmpBuff("RES", value);
+		log(role.name + " activates <b>" + role.weapon[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "</b> DEF and RES increase " + value); 
+	}
+}
+
+function settleInitAttackSpecial(attacker, defender) {
+	if (attacker.isSpecialReady(SPECIAL_BEFORE_ATTACK)) {
+		var atk = attacker.getAttr('ATK');
+		var key = attacker.weapon['D_Type'] == '1' ? 'DEF' : 'RES';
+		var def = defender.getAttr(key);
+		var ratio = parseInt(attacker.special['PreAttack_AOE']);
+		var dmg = (atk-def)*ratio/100;
+		defender.nonBattleHurt(dmg);
+		attacker.resetCD();
+		log(attacker.name + " activates <b>" + attacker.special[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "</b> deal " + dmg + " damage to " + defender.name); 
+	}
+}
+
+function settleFury(role) {
+	if (role.passivea != '0' && role.passivea['Fury'] != '0') {
+		var value = parseInt(role.passivea['Fury']);
+		log(role.name + " lost <font color=\"red\">" + value + "</font> hp due to <b>" + role.passivea[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "</b>"); 
+		role.nonBattleHurt(value);
+	}
+}
+
+function settleSealSkill(attacker, defender) {
+	if (attacker.passiveb != '0' && attacker.passiveb['Seal']!='0') {
+		var arr = attacker.passiveb['Seal'].split(':');
+		var attr = ATTR_NAMES[arr[0]];
+		var value = parseInt(arr[1]);
+		defender.addDebuff(attr, value);
+		log(attacker.name + " activates <b>" +attacker.passiveb[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH']+ "</b> " + defender.name + "'s " +  attr + " decrease " + value); 
+	}
+}
+
+function settlePoisonAndDagger(attacker, defender) {
+	if (attacker.passiveb != '0' && attacker.passiveb['Poison']!='0') {
+		var value = parseInt(attacker.passiveb['Poison']);
+		defender.nonBattleHurt(value);
+		log(attacker.name + " activates <b>" + attacker.passiveb[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "</b> deal " + value + " damage to " + defender.name); 
+	}
+	if (attacker.weapon['Dagger'] != '0') {
+		var arr = attacker.weapon['Dagger'].split('|');
+		var value1 = parseInt(arr[0]);
+		var value2 = parseInt(arr[1]);
+		defender.addDebuff(value1);
+		attacker.addBuff(value2);
+		log(attacker.name + " activates <b>" + attacker.weapon[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "</b>"); 
+	}
+}
+
+function isGaleforce(role) {
+	if (role.isSpecialReady(SPECIAL_AFTER_ATTACK)) {
+		if (role.special['Galeforce']=='1') {
+			log(role.name + " activates <b>" + attacker.special[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "</b>"); 
+			return true;
+		}
+	}
+	return false;
+}
+
+function getTriangleRatio(attacker, defender) {
+	var ratio = 0;
+	var color1 = parseInt(attacker.weapon['Color']);
+	var color2 = parseInt(defender.weapon['Color']);
+	var BASE_ADEPT = 20;
+	var adept = 0;
+	
+	if (attacker.weapon['Tri_Adept'] != '0') {
+		value = parseInt(attacker.weapon['Tri_Adept']);
+		adept = value > adept ? value : adept;
+	}
+	if (defender.weapon['Tri_Adept'] != '0') {
+		value = parseInt(defender.weapon['Tri_Adept']);
+		adept = value > adept ? value : adept;
+	}
+	if (attacker.passivea!='0' && attacker.passivea['Adept'] != '0') {
+		value = parseInt(attacker.passivea['Adept']);
+		adept = value > adept ? value : adept;
+	}
+	if (defender.passivea!='0' && defender.passivea['Adept'] != '0') {
+		value = parseInt(defender.passivea['Adept']);
+		adept = value > adept ? value : adept;
+	}
+	console.log("TR"+adept);
+	if (attacker.weapon['Eff_Colorless'] == '1' && color2 == COLOR_COLORLESS) {
+		ratio = BASE_ADEPT + adept;
+	} else if(defender.weapon['Eff_Colorless'] == '1' && color1 == COLOR_COLORLESS) {
+		ratio = -(BASE_ADEPT + adept);
+	}
+	if (color1 != COLOR_COLORLESS && color2 != COLOR_COLORLESS && color1!=color2) {
+		ratio = (color1-color2+3)%3 == 1 ? (BASE_ADEPT + adept) : -(BASE_ADEPT + adept);
+	}
+	if (LANGUAGE == 'EN') {
+		log("Trianble Ratio:" + ratio);
+	} else {
+		log("相性修正:" + ratio);
+	}
+	return ratio;
+}
+
+function isEffective(attacker, defender) {
+	if (attacker.weapon['Eff_M'] == defender.config['M_Type'] && !defender.immuneEff()){
+		return true;
+	}
+	if (attacker.weapon['Eff_W']!='0' && attacker.weapon['Eff_W'].split('|').indexOf(defender.weapon['W_Type'])!=-1 && !defender.immuneEff()){
+		return true;
+	}
+	return false;
+}
+
+function oneHit(attacker, defender) {
+	if (attacker.isDie() || defender.isDie()) {
+		return;
+	}
+	log("==============" + attacker.name + " attack " + defender.name + "==============");
+	
+	var atk = attacker.getAttr('ATK');
+	var key = attacker.weapon['D_Type'] == '1' ? 'DEF' : 'RES';
+	var def = defender.getAttr(key);
+	log("ATK" + atk + "->" + key + def);
+	
+	var attackerSp = false;
+	var defenderSp = false;
+	//Modification to base atk
+	if (attacker.weapon['BuffDamage'] == '1') {
+		atk += attacker.getTotalBuff();
+	}
+	//Effective Modification
+	if (isEffective(attacker, defender)) {
+		if (LANGUAGE == 'EN') {
+			log("Super Effective!");
+		} else {
+			log("特效加成！");
+		}
+		atk = atk + Math.floor(atk/2);
+	}
+	//Adept Modification
+	var ratio = getTriangleRatio(attacker, defender);
+	atk = atk + Math.floor(ratio * atk / 100);
+	
+	//Special Modification
+	var dmgRatio = 0;
+	var dmgHeal = 0;
+	if (attacker.isSpecialReady(SPECIAL_ATTACK)) {
+		dmgRatio = parseInt(attacker.special['DMG_Ratio']);
+		var drRatio = parseInt(attacker.special['DR_Ratio']);
+		dmgHeal = parseInt(attacker.special['DMG_Heal']);
+		if(attacker.special['DMG_Boost'] != '0') {
+			var arr = attacker.special['DMG_Boost'].split(':');
+			var attr = ATTR_NAMES[arr[0]];
+			var value = parseInt(arr[1]);
+			if (attr == 'HP') {
+				atk += Math.floor((attacker.maxHP - attacker.curHP)* value / 100);
+			} else {
+				atk += Math.floor(attacker.getAttr(attr) * value / 100);
+			}
+		}
+		if (drRatio != 0) {
+			def -= Math.floor(drRatio * def / 100);
+		}
+		attackerSp = true;
+		attacker.resetCD();
+		log(attacker.name + " acivates <b><font color=\"pink\"> " + attacker.special[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "</font></b>");  
+	}
+	
+	var dmgReduce = 0;
+	var isMiracle = 0;
+	if (defender.isSpecialReady(SPECIAL_ATTACKED)) {
+		isMiracle = defender.curHP > 1 && parseInt(defender.special['Miracle']) == 1;
+		var arr = defender.special['DMG_Reduce'].split(":");
+		if (arr.length == 2 && arr[0] == attacker.weapon['Range']){
+			dmgReduce  = parseInt(arr[1]);
+			defender.resetCD();
+			defenderSp = true;
+			log(defender.name + " acivates <b><font color=\"pink\"> " + defender.special[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "</font></b>");  
+		}
+	}
+	console.log('A'+atk+' D'+def);
+	var dmg = Math.floor((atk - def) * (100+dmgRatio) /100) - Math.floor((atk - def) * (100+dmgRatio) / 100 * dmgReduce / 100);
+	if (dmg < 0) {
+		dmg = 0;
+	}
+	if (dmg >= defender.curHP && isMiracle) {
+		defender.resetCD();
+		defenderSp = true;
+		dmg = defender.curHP - 1;
+		log(defender.name + " activates <b><font color=\"pink\"> " + defender.special[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "</font></b>");
+	}
+	defender.curHP = defender.curHP - dmg;
+
+	log(attacker.name + " attacked " + defender.name +" ,dealt <font color=\"red\">" + dmg + "</font> DMG");
+	//log(attacker.config[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "'Current HP:" + attacker.curHP + " " + defender.config[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + "'Current HP:" + defender.curHP);
+	if (!attackerSp) {
+		attacker.decCD();
+	}
+	if (!defenderSp) {
+		defender.decCD();
+	}
+	log(attacker.debugString());
+	log(defender.debugString());
+}
+
+function attack(attacker, defender) {
+	oneHit(attacker, defender);
+	if (attacker.isBrave){
+		oneHit(attacker, defender);
+	}
+}
+
+function battle(attacker, defender) {
+	log("START BATTLE:" + attacker.config[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH'] + " VS " + defender.config[LANGUAGE == 'EN' ? 'Name_EN' : 'Name_ZH']);
+	//log(attacker);
+	attacker.resetCD();
+	defender.resetCD();
+	var roundCount = 1;
+	log(attacker.debugString());
+	log(defender.debugString());
+	while (!attacker.isDie() && !defender.isDie() && roundCount < 10) {
+		//start round, defiant skills, only in weapon and passive A
+		
+		log("=======================================");
+		log("================ROUND " + roundCount+"================");
+		log("=======================================");
+		attacker.resetBuff();
+		settleDefiantSkill(attacker);
+		settleThreatenSkill(attacker, defender);
+		settleInitAttackBuff(attacker);
+		settleAttackedBuff(defender);
+		settleInitAttackSpecial(attacker, defender);
+		
+		var canFollowUp = attacker.getAttr('SPD') - defender.getAttr('SPD') >= 5; //是否追击	
+		var canCounter = attacker.weapon['Range'] == defender.weapon['Range'] 
+			|| (defender.passivea!='0' && defender.passivea['Counter']=='1');
+		var canCounterFollowUp = canCounter && (defender.getAttr('SPD') - attacker.getAttr('SPD') >= 5);
+		var canVantage = canCounter && defender.checkVantage();//待伏
+		var canBrash = canCounter && attacker.checkBrash();
+		var canDesperate = canFollowUp && attacker.checkDesperation();
+		var canRiposite = canCounter && defender.checkRiposite();
+		var canWary = defender.checkWary() || attacker.checkWary();
+		var attackerBreak = attacker.checkWeaponBreak(defender.weapon['W_Type']);
+		var defenderBreak = canCounter && defender.checkWeaponBreak(attacker.weapon['W_Type']);
+		if (attackerBreak && defenderBreak) {
+			attackerBreak = false;
+			defenderBreak = false;
+		}
+		attacker.isBrave = attacker.hasBraveWeapon();
+		defender.isBrave = false;
+		console.log('AS' + attacker.getAttr('SPD') + 'BS' + defender.getAttr('SPD'));
+		console.log('Follow' + canFollowUp + 'CanCounter'+canCounter+'CFollow'+canCounterFollowUp+'Vantage' + canVantage + 'Brash' + canBrash + 'Desperate' + canDesperate + 'ABreak' + attackerBreak + 'DBreak' + defenderBreak + ' Wary:' + canWary);
+		if (canVantage) {
+			log(defender.name + " activates Vantage!");
+			attack(defender, attacker);
+			attack(attacker, defender);
+			if (canDesperate && !defenderBreak) {
+				attack(attacker, defender);
+				if (defenderBreak) {
+					attack(defender, attacker);
+				}else if ( (canCounterFollowUp || canRiposite) && (!canWary && !attackerBreak)) {
+					attack(defender, attacker);
+				}	
+			} else {
+				if (attackerBreak) {
+					attack(attacker, defender);
+				} else if ( (canFollowUp || canBrash) && (!canWary && !defenderBreak)) {
+					attack(attacker, defender);
+				}
+				if (defenderBreak) {
+					attack(defender, attacker);
+				}else if ( (canCounterFollowUp || canRiposite) && (!canWary && !attackerBreak)) {
+					attack(defender, attacker);
+				}					
+			}
+		} else {
+			attack(attacker, defender);
+			if (canDesperate && !defenderBreak) {
+				attack(attacker, defender);
+				if (canCounter) {
+					attack(defender, attacker)
+				}
+				if (defenderBreak) {
+					attack(defender, attacker);
+				}else if ( (canCounterFollowUp || canRiposite) && (!canWary && !attackerBreak)) {
+					attack(defender, attacker);
+				}	
+			} else {
+				if (canCounter) {
+					console.log('defender counter');
+					attack(defender, attacker)
+				}
+				if (attackerBreak) {
+					console.log('attacker break');
+					attack(attacker, defender);
+				} else if ( (canFollowUp || canBrash) && (!canWary && !defenderBreak)) {
+					console.log('attacker follow up or defender');
+					attack(attacker, defender);
+				}
+				if (defenderBreak) {
+					console.log('Defender weapon break');
+					attack(defender, attacker);
+				} else if ( (canCounterFollowUp || canRiposite) && (!canWary && !attackerBreak)) {
+					console.log('Defender follow up or Riposite');
+					attack(defender, attacker);
+				}					
+			}
+		}
+		attacker.resetTmpBuff();
+		defender.resetTmpBuff();
+		attacker.resetDebuff();
+		defender.resetDebuff();
+		
+		settleFury(attacker);
+		settleFury(defender);
+		settlePoisonAndDagger(attacker, defender);
+		settleSealSkill(attacker, defender);
+		settleSealSkill(defender, attacker);
+		var again = isGaleforce(attacker);
+		if (!again) {
+			var tmp = attacker;
+			var attacker = defender;
+			var defender = tmp;
+		}
+		if (attacker.isDie()) {
+			log(defender.name + " <b>WIN!!!</b>");
+		} else if (defender.isDie()){
+			log(attacker.name + " <b>WIN!!!</b>");
+		}
+		roundCount++;
+	}
+}
+
+
+</script>
+</body>
+
+</html>
